@@ -292,7 +292,7 @@
     </div>
 
     <!-- 功能状态和适用范围（三级功能） -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.1s" id="status-cards">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.1s" id="status-cards">
       <!-- 功能当前状态 -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
         <h3 class="text-lg font-semibold mb-4 flex items-center">
@@ -379,6 +379,51 @@
             <i class="fa fa-times-circle text-neutral-400 text-xs"></i>
             Shein
           </span>
+        </div>
+      </div>
+      
+      <!-- 资源与文档（新增） -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
+        <h3 class="text-lg font-semibold mb-4 flex items-center">
+          <i class="fa fa-book text-primary mr-2"></i>
+          资源与文档
+        </h3>
+        <div class="flex flex-col gap-3">
+          <!-- 用例列表 -->
+          <button class="flex items-center justify-between px-4 py-3 bg-neutral-100 hover:bg-primary/5 rounded-lg transition-all hover-lift border border-transparent hover:border-primary/20 group">
+            <div class="flex items-center">
+              <i class="fa fa-list-ul text-primary mr-3 text-base"></i>
+              <span class="text-sm font-medium text-neutral-700 group-hover:text-primary transition-colors">用例列表</span>
+            </div>
+            <i class="fa fa-angle-right text-neutral-400 group-hover:text-primary transition-colors"></i>
+          </button>
+          
+          <!-- Help Article -->
+          <button class="flex items-center justify-between px-4 py-3 bg-neutral-100 hover:bg-primary/5 rounded-lg transition-all hover-lift border border-transparent hover:border-primary/20 group">
+            <div class="flex items-center">
+              <i class="fa fa-question-circle text-primary mr-3 text-base"></i>
+              <span class="text-sm font-medium text-neutral-700 group-hover:text-primary transition-colors">Help Article</span>
+            </div>
+            <i class="fa fa-angle-right text-neutral-400 group-hover:text-primary transition-colors"></i>
+          </button>
+          
+          <!-- 故障排查手册 -->
+          <button class="flex items-center justify-between px-4 py-3 bg-neutral-100 hover:bg-primary/5 rounded-lg transition-all hover-lift border border-transparent hover:border-primary/20 group">
+            <div class="flex items-center">
+              <i class="fa fa-wrench text-primary mr-3 text-base"></i>
+              <span class="text-sm font-medium text-neutral-700 group-hover:text-primary transition-colors">故障排查手册</span>
+            </div>
+            <i class="fa fa-angle-right text-neutral-400 group-hover:text-primary transition-colors"></i>
+          </button>
+          
+          <!-- 技术架构图 -->
+          <button class="flex items-center justify-between px-4 py-3 bg-neutral-100 hover:bg-primary/5 rounded-lg transition-all hover-lift border border-transparent hover:border-primary/20 group">
+            <div class="flex items-center">
+              <i class="fa fa-sitemap text-primary mr-3 text-base"></i>
+              <span class="text-sm font-medium text-neutral-700 group-hover:text-primary transition-colors">技术架构图</span>
+            </div>
+            <i class="fa fa-angle-right text-neutral-400 group-hover:text-primary transition-colors"></i>
+          </button>
         </div>
       </div>
     </div>
