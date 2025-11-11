@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>退货管理系统 - 智能批量退货功能看板</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36CFC9',
+            success: '#52C41A',
+            warning: '#FAAD14',
+            danger: '#FF4D4F',
+            neutral: {
+              100: '#F5F7FA',
+              200: '#E4E7ED',
+              300: '#C0C6CF',
+              400: '#909399',
+              500: '#606266',
+              600: '#303133',
+              700: '#1E1E1E',
+            },
+            plan: {
+              enterprise: '#165DFF',
+              premium: '#36CFC9',
+              pro: '#FAAD14',
+              essential: '#909399'
+            }
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
+            'card-hover': '0 8px 30px 0 rgba(0, 0, 0, 0.1)',
+          }
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-transition {
+        transition: all 0.3s ease;
+      }
+      .hover-lift {
+        transition: transform 0.2s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-3px);
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+      .animate-slide-up {
+        animation: slideUp 0.5s ease-out;
+      }
+      .badge-active {
+        @apply bg-success/10 text-success border border-success/30;
+      }
+      .badge-inactive {
+        @apply bg-neutral-100 text-neutral-400 border border-neutral-200;
+      }
+      .status-tag {
+        @apply px-3 py-1 rounded-full text-sm font-medium;
+      }
+      .filter-checkbox {
+        @apply w-4 h-4 rounded border-neutral-300 text-primary focus:ring-primary/30 cursor-pointer;
+      }
+      .filter-label {
+        @apply ml-2 text-sm font-medium text-neutral-700 cursor-pointer;
+      }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="font-inter bg-neutral-100 text-neutral-700 min-h-screen">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <!-- 品牌标识 -->
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-shopping-bag text-primary text-2xl"></i>
+        <span class="font-bold text-lg text-neutral-700">ReturnHub</span>
+      </div>
+      
+      <!-- 导航路径 -->
+      <nav class="hidden md:flex items-center text-sm text-neutral-500">
+        <a href="#" class="hover:text-primary transition-colors">跨电商管理平台</a>
+        <i class="fa fa-angle-right mx-2 text-neutral-300"></i>
+        <a href="#" class="hover:text-primary transition-colors">退货管理中心</a>
+        <i class="fa fa-angle-right mx-2 text-neutral-300"></i>
+        <span class="text-primary font-medium">智能批量退货</span>
+      </nav>
+      
+      <!-- 用户区域 -->
+      <div class="flex items-center space-x-4">
+        <button class="text-neutral-500 hover:text-primary transition-colors">
+          <i class="fa fa-bell-o text-lg"></i>
+        </button>
+        <div class="flex items-center space-x-2">
+          <img src="https://picsum.photos/id/1005/200/200" alt="用户头像" class="w-8 h-8 rounded-full object-cover border border-neutral-200">
+          <span class="hidden md:inline text-sm font-medium">管理员</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-6">
+    <!-- 页面标题和时间筛选 -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 animate-fade-in">
+      <div>
+        <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-neutral-700">智能批量退货 - 数据看板</h1>
+        <p class="text-neutral-500 mt-1">功能使用数据与状态监控</p>
+      </div>
+      
+      <!-- 时间范围选择器 -->
+      <div class="bg-white rounded-lg shadow-sm p-2 flex items-center border border-neutral-200">
+        <label for="time-range" class="text-sm text-neutral-500 mr-2">时间范围:</label>
+        <select id="time-range" class="bg-transparent border-none outline-none text-sm font-medium pr-6 appearance-none cursor-pointer focus:ring-0">
+          <option value="7days">最近7天</option>
+          <option value="30days">最近30天</option>
+          <option value="90days">最近90天</option>
+          <option value="custom">自定义范围</option>
+        </select>
+        <i class="fa fa-chevron-down text-neutral-400 text-xs -ml-5 pointer-events-none"></i>
+      </div>
+    </div>
+
+    <!-- 核心数据指标卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-up">
+      <!-- 工单数量 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-neutral-500 text-sm mb-1">最近工单数量</p>
+            <h3 class="text-3xl font-bold text-neutral-700">1,284</h3>
+            <div class="flex items-center mt-2 text-success text-sm">
+              <i class="fa fa-arrow-up mr-1"></i>
+              <span>12.5%</span>
+              <span class="text-neutral-400 ml-1">较上周</span>
+            </div>
+          </div>
+          <div class="bg-primary/10 p-3 rounded-lg">
+            <i class="fa fa-ticket text-primary text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Incident数量 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-neutral-500 text-sm mb-1">相关Incident数量</p>
+            <h3 class="text-3xl font-bold text-neutral-700">18</h3>
+            <div class="flex items-center mt-2 text-danger text-sm">
+              <i class="fa fa-arrow-up mr-1"></i>
+              <span>3.2%</span>
+              <span class="text-neutral-400 ml-1">较上周</span>
+            </div>
+          </div>
+          <div class="bg-danger/10 p-3 rounded-lg">
+            <i class="fa fa-exclamation-triangle text-danger text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 启用人次 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-neutral-500 text-sm mb-1">启用人次</p>
+            <h3 class="text-3xl font-bold text-neutral-700">568</h3>
+            <div class="flex items-center mt-2 text-success text-sm">
+              <i class="fa fa-arrow-up mr-1"></i>
+              <span>28.7%</span>
+              <span class="text-neutral-400 ml-1">较上周</span>
+            </div>
+          </div>
+          <div class="bg-success/10 p-3 rounded-lg">
+            <i class="fa fa-power-off text-success text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 停用人次 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-neutral-500 text-sm mb-1">停用人次</p>
+            <h3 class="text-3xl font-bold text-neutral-700">42</h3>
+            <div class="flex items-center mt-2 text-neutral-400 text-sm">
+              <i class="fa fa-minus mr-1"></i>
+              <span>0.0%</span>
+              <span class="text-neutral-400 ml-1">较上周</span>
+            </div>
+          </div>
+          <div class="bg-warning/10 p-3 rounded-lg">
+            <i class="fa fa-power-off text-warning text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能状态和适用范围 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.1s">
+      <!-- 功能状态 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
+        <h3 class="text-lg font-semibold mb-4 flex items-center">
+          <i class="fa fa-info-circle text-primary mr-2"></i>
+          功能当前状态
+        </h3>
+        <div class="flex flex-col items-center justify-center py-4">
+          <span class="status-tag bg-secondary/10 text-secondary border border-secondary/30">
+            灰度中
+          </span>
+          <p class="text-neutral-500 mt-3 text-center">
+            已向 30% 企业用户开放，计划于 2025-12-01 全量发布
+          </p>
+        </div>
+      </div>
+      
+      <!-- 适用计费方案 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
+        <h3 class="text-lg font-semibold mb-4 flex items-center">
+          <i class="fa fa-tag text-primary mr-2"></i>
+          适用计费方案
+        </h3>
+        <div class="grid grid-cols-2 gap-3">
+          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Enterprise
+          </span>
+          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Premium
+          </span>
+          <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Pro
+          </span>
+          <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Essential
+          </span>
+        </div>
+      </div>
+      
+      <!-- 适用平台 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
+        <h3 class="text-lg font-semibold mb-4 flex items-center">
+          <i class="fa fa-globe text-primary mr-2"></i>
+          适用电商平台
+        </h3>
+        <div class="grid grid-cols-2 gap-3">
+          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Amazon
+          </span>
+          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Shopify
+          </span>
+          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+            eBay
+          </span>
+          <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Walmart
+          </span>
+          <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
+            AliExpress
+          </span>
+          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+            Etsy
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能使用趋势图（带筛选功能） -->
+    <div class="bg-white rounded-xl shadow-card p-6 mb-8 animate-slide-up" style="animation-delay: 0.2s">
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold flex items-center">
+          <i class="fa fa-line-chart text-primary mr-2"></i>
+          功能使用趋势
+        </h3>
+        
+        <!-- 计费方案筛选控件 -->
+        <div class="flex flex-wrap gap-4 mt-3 md:mt-0">
+          <div class="flex items-center">
+            <input type="checkbox" id="filter-enterprise" class="filter-checkbox" checked>
+            <label for="filter-enterprise" class="filter-label flex items-center">
+              <span class="w-3 h-3 rounded-full bg-plan-enterprise mr-1.5"></span>
+              Enterprise
+            </label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="filter-premium" class="filter-checkbox" checked>
+            <label for="filter-premium" class="filter-label flex items-center">
+              <span class="w-3 h-3 rounded-full bg-plan-premium mr-1.5"></span>
+              Premium
+            </label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="filter-pro" class="filter-checkbox">
+            <label for="filter-pro" class="filter-label flex items-center">
+              <span class="w-3 h-3 rounded-full bg-plan-pro mr-1.5"></span>
+              Pro
+            </label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="filter-essential" class="filter-checkbox">
+            <label for="filter-essential" class="filter-label flex items-center">
+              <span class="w-3 h-3 rounded-full bg-plan-essential mr-1.5"></span>
+              Essential
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="h-64">
+        <canvas id="usageTrendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 版本更新和路线图 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.3s">
+      <!-- 最近更新日志 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold flex items-center">
+            <i class="fa fa-history text-primary mr-2"></i>
+            最近功能更新
+          </h3>
+          <a href="#" class="text-primary text-sm hover:underline">查看全部</a>
+        </div>
+        <div class="space-y-4">
+          <div class="border-l-2 border-primary pl-4 py-1">
+            <div class="flex justify-between items-start">
+              <h4 class="font-medium">支持批量退货标签打印</h4>
+              <span class="text-neutral-400 text-sm">2025-10-28</span>
+            </div>
+            <p class="text-neutral-500 text-sm mt-1">新增批量生成退货标签功能，支持PDF导出和直接打印，提升操作效率</p>
+          </div>
+          <div class="border-l-2 border-neutral-200 pl-4 py-1">
+            <div class="flex justify-between items-start">
+              <h4 class="font-medium">亚马逊退货规则适配</h4>
+              <span class="text-neutral-400 text-sm">2025-10-15</span>
+            </div>
+            <p class="text-neutral-500 text-sm mt-1">优化亚马逊平台退货流程，自动匹配平台最新退货政策和处理要求</p>
+          </div>
+          <div class="border-l-2 border-neutral-200 pl-4 py-1">
+            <div class="flex justify-between items-start">
+              <h4 class="font-medium">多语言退货原因选择</h4>
+              <span class="text-neutral-400 text-sm">2025-10-01</span>
+            </div>
+            <p class="text-neutral-500 text-sm mt-1">支持英语、德语、法语等6种语言的退货原因选项，满足跨境业务需求</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 未来路线图 -->
+      <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold flex items-center">
+            <i class="fa fa-road text-primary mr-2"></i>
+            功能开发路线图
+          </h3>
+          <a href="#" class="text-primary text-sm hover:underline">查看全部</a>
+        </div>
+        <div class="space-y-4">
+          <div class="border-l-2 border-warning pl-4 py-1">
+            <div class="flex justify-between items-start">
+              <h4 class="font-medium">支持Walmart平台退货</h4>
+              <span class="text-warning text-sm font-medium">2025-11-30</span>
+            </div>
+            <p class="text-neutral-500 text-sm mt-1">新增Walmart平台退货流程集成，支持自动同步退货状态和退款处理</p>
+          </div>
+          <div class="border-l-2 border-neutral-200 pl-4 py-1">
+            <div class="flex justify-between items-start">
+              <h4 class="font-medium">AI智能退货原因分类</h4>
+              <span class="text-neutral-400 text-sm font-medium">2025-12-15</span>
+            </div>
+            <p class="text-neutral-500 text-sm mt-1">基于AI算法自动识别和分类退货原因，生成退货数据分析报告</p>
+          </div>
+          <div class="border-l-2 border-neutral-200 pl-4 py-1">
+            <div class="flex justify-between items-start">
+              <h4 class="font-medium">批量退货API接口开放</h4>
+              <span class="text-neutral-400 text-sm font-medium">2026-01-20</span>
+            </div>
+            <p class="text-neutral-500 text-sm mt-1">提供RESTful API接口，支持第三方系统集成和自动化批量退货操作</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-neutral-200 py-6">
+    <div class="container mx-auto px-4 text-center text-neutral-500 text-sm">
+      <p>© 2026 ReturnHub 跨电商退货管理系统 | 数据看板原型 v1.0</p>
+      <div class="flex justify-center space-x-4 mt-2">
+        <a href="#" class="hover:text-primary transition-colors">帮助中心</a>
+        <a href="#" class="hover:text-primary transition-colors">联系我们</a>
+        <a href="#" class="hover:text-primary transition-colors">隐私政策</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 图表初始化脚本 -->
+  <script>
+    // 等待DOM加载完成
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化使用趋势图表
+      const ctx = document.getElementById('usageTrendChart').getContext('2d');
+      
+      // 生成过去7天的日期标签
+      const labels = [];
+      const today = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        labels.push(date.getMonth() + 1 + '/' + date.getDate());
+      }
+      
+      // 按计费方案分类的图表数据
+      const planDatasets = [
+        {
+          label: 'Enterprise',
+          data: [86, 95, 88, 112, 128, 122, 145],
+          borderColor: '#165DFF',
+          backgroundColor: 'rgba(22, 93, 255, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2,
+          pointBackgroundColor: '#165DFF',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        },
+        {
+          label: 'Premium',
+          data: [42, 50, 44, 56, 54, 53, 53],
+          borderColor: '#36CFC9',
+          backgroundColor: 'rgba(54, 207, 201, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2,
+          pointBackgroundColor: '#36CFC9',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        },
+        {
+          label: 'Pro',
+          data: [0, 0, 0, 0, 0, 0, 0],
+          borderColor: '#FAAD14',
+          backgroundColor: 'rgba(250, 173, 20, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2,
+          pointBackgroundColor: '#FAAD14',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        },
+        {
+          label: 'Essential',
+          data: [0, 0, 0, 0, 0, 0, 0],
+          borderColor: '#909399',
+          backgroundColor: 'rgba(144, 147, 153, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2,
+          pointBackgroundColor: '#909399',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        }
+      ];
+      
+      // 创建图表实例
+      const usageChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: planDatasets.filter((_, index) => {
+            // 默认选中Enterprise和Premium
+            return index === 0 || index === 1;
+          })
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                boxWidth: 6,
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              titleColor: '#303133',
+              bodyColor: '#606266',
+              borderColor: '#E4E7ED',
+              borderWidth: 1,
+              padding: 10,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.raw;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                font: {
+                  size: 11
+                },
+                color: '#909399'
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: '#F5F7FA'
+              },
+              ticks: {
+                font: {
+                  size: 11
+                },
+                color: '#909399',
+                stepSize: 50
+              }
+            }
+          },
+          animation: {
+            duration: 1500,
+            easing: 'easeOutQuart'
+          },
+          transition: {
+            duration: 500,
+            easing: 'easeOutQuart'
+          }
+        }
+      });
+      
+      // 筛选功能实现
+      const filterCheckboxes = [
+        document.getElementById('filter-enterprise'),
+        document.getElementById('filter-premium'),
+        document.getElementById('filter-pro'),
+        document.getElementById('filter-essential')
+      ];
+      
+      filterCheckboxes.forEach((checkbox, index) => {
+        checkbox.addEventListener('change', function() {
+          updateChartDatasets();
+        });
+      });
+      
+      // 更新图表数据集
+      function updateChartDatasets() {
+        const activeDatasets = [];
+        
+        filterCheckboxes.forEach((checkbox, index) => {
+          if (checkbox.checked) {
+            activeDatasets.push(planDatasets[index]);
+          }
+        });
+        
+        usageChart.data.datasets = activeDatasets;
+        usageChart.update();
+      }
+      
+      // 时间范围选择器交互
+      const timeRangeSelect = document.getElementById('time-range');
+      timeRangeSelect.addEventListener('change', function() {
+        // 这里可以添加时间范围变更后的逻辑
+        const selectedValue = this.value;
+        console.log('时间范围已变更为:', selectedValue);
+        
+        // 简单的加载动画效果
+        const cards = document.querySelectorAll('.card-transition');
+        cards.forEach(card => {
+          card.style.opacity = '0.7';
+        });
+        
+        setTimeout(() => {
+          cards.forEach(card => {
+            card.style.opacity = '1';
+          });
+        }, 500);
+      });
+    });
+  </script>
+</body>
+</html>
