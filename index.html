@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>退货管理系统 - 智能批量退货功能看板</title>
+  <title>退货管理系统 - 智能批量退货（三级功能）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
@@ -42,6 +42,7 @@
           boxShadow: {
             'card': '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
             'card-hover': '0 8px 30px 0 rgba(0, 0, 0, 0.1)',
+            'dropdown': '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)',
           }
         },
       }
@@ -71,6 +72,9 @@
       .badge-active {
         @apply bg-success/10 text-success border border-success/30;
       }
+      .badge-partial {
+        @apply bg-warning/10 text-warning border border-warning/30;
+      }
       .badge-inactive {
         @apply bg-neutral-100 text-neutral-400 border border-neutral-200;
       }
@@ -83,6 +87,21 @@
       .filter-label {
         @apply ml-2 text-sm font-medium text-neutral-700 cursor-pointer;
       }
+      .subnav-item {
+        @apply px-4 py-2 text-sm hover:bg-neutral-100 transition-colors cursor-pointer flex items-center;
+      }
+      .subnav-item.active {
+        @apply text-primary font-medium bg-primary/5;
+      }
+      .breadcrumb-item {
+        @apply hover:text-primary transition-colors cursor-pointer;
+      }
+      .breadcrumb-item.active {
+        @apply text-primary font-medium;
+      }
+      .platform-tag {
+        @apply flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium;
+      }
     }
     
     @keyframes fadeIn {
@@ -93,6 +112,16 @@
     @keyframes slideUp {
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0.7; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+    
+    .data-loading {
+      animation: fadeInOut 0.5s ease-in-out;
     }
   </style>
 </head>
@@ -106,14 +135,52 @@
         <span class="font-bold text-lg text-neutral-700">ReturnHub</span>
       </div>
       
-      <!-- 导航路径 -->
-      <nav class="hidden md:flex items-center text-sm text-neutral-500">
-        <a href="#" class="hover:text-primary transition-colors">跨电商管理平台</a>
-        <i class="fa fa-angle-right mx-2 text-neutral-300"></i>
-        <a href="#" class="hover:text-primary transition-colors">退货管理中心</a>
-        <i class="fa fa-angle-right mx-2 text-neutral-300"></i>
-        <span class="text-primary font-medium">智能批量退货</span>
-      </nav>
+      <!-- 导航路径（四级面包屑）和四级子功能导航 -->
+      <div class="hidden md:flex flex-col items-end">
+        <!-- 四级面包屑导航 -->
+        <nav class="flex items-center text-sm text-neutral-500 mb-1" id="breadcrumb">
+          <span class="breadcrumb-item" data-level="1">跨电商管理平台</span>
+          <i class="fa fa-angle-right mx-2 text-neutral-300"></i>
+          <span class="breadcrumb-item" data-level="2">退货管理中心</span>
+          <i class="fa fa-angle-right mx-2 text-neutral-300"></i>
+          <div class="relative group">
+            <span class="breadcrumb-item active flex items-center" data-level="3">
+              智能批量退货
+              <i class="fa fa-angle-down ml-1 text-xs"></i>
+            </span>
+            <!-- 四级子功能下拉菜单 -->
+            <div class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-dropdown border border-neutral-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div class="py-1">
+                <div class="subnav-item" data-subfeature="batch-label">
+                  <i class="fa fa-print mr-2 text-primary"></i>
+                  批量退货标签打印
+                </div>
+                <div class="subnav-item" data-subfeature="auto-process">
+                  <i class="fa fa-refresh mr-2 text-neutral-400"></i>
+                  自动退货流程处理
+                </div>
+                <div class="subnav-item" data-subfeature="multi-platform">
+                  <i class="fa fa-globe mr-2 text-neutral-400"></i>
+                  多平台退货同步
+                </div>
+                <div class="subnav-item" data-subfeature="return-analytics">
+                  <i class="fa fa-bar-chart mr-2 text-neutral-400"></i>
+                  退货数据分析
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 四级功能占位（切换后显示） -->
+          <i class="fa fa-angle-right mx-2 text-neutral-300 hidden" id="level4-separator"></i>
+          <span class="breadcrumb-item active hidden" id="level4-item" data-level="4">
+            批量退货标签打印
+          </span>
+        </nav>
+        <!-- 当前查看提示 -->
+        <div class="text-xs text-neutral-400" id="current-view">
+          当前查看: 智能批量退货（三级功能）
+        </div>
+      </div>
       
       <!-- 用户区域 -->
       <div class="flex items-center space-x-4">
@@ -132,8 +199,8 @@
     <!-- 页面标题和时间筛选 -->
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 animate-fade-in">
       <div>
-        <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-neutral-700">智能批量退货 - 数据看板</h1>
-        <p class="text-neutral-500 mt-1">功能使用数据与状态监控</p>
+        <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-neutral-700" id="page-title">智能批量退货 - 数据看板</h1>
+        <p class="text-neutral-500 mt-1" id="page-desc">三级功能整体使用数据与状态监控</p>
       </div>
       
       <!-- 时间范围选择器 -->
@@ -149,18 +216,18 @@
       </div>
     </div>
 
-    <!-- 核心数据指标卡片 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-up">
-      <!-- 工单数量 -->
+    <!-- 核心数据指标卡片（三级功能：汇总数据） -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-up" id="metrics-cards">
+      <!-- 总工单数量 -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-neutral-500 text-sm mb-1">最近工单数量</p>
-            <h3 class="text-3xl font-bold text-neutral-700">1,284</h3>
+            <p class="text-neutral-500 text-sm mb-1">总工单数量</p>
+            <h3 class="text-3xl font-bold text-neutral-700" data-metric="total-tickets">1,456</h3>
             <div class="flex items-center mt-2 text-success text-sm">
               <i class="fa fa-arrow-up mr-1"></i>
-              <span>12.5%</span>
-              <span class="text-neutral-400 ml-1">较上周</span>
+              <span data-metric="total-tickets-change">23.7%</span>
+              <span class="text-neutral-400 ml-1">较上月</span>
             </div>
           </div>
           <div class="bg-primary/10 p-3 rounded-lg">
@@ -169,16 +236,16 @@
         </div>
       </div>
       
-      <!-- Incident数量 -->
+      <!-- 总Incident数量 -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-neutral-500 text-sm mb-1">相关Incident数量</p>
-            <h3 class="text-3xl font-bold text-neutral-700">18</h3>
+            <p class="text-neutral-500 text-sm mb-1">总相关Incident数量</p>
+            <h3 class="text-3xl font-bold text-neutral-700" data-metric="total-incidents">28</h3>
             <div class="flex items-center mt-2 text-danger text-sm">
               <i class="fa fa-arrow-up mr-1"></i>
-              <span>3.2%</span>
-              <span class="text-neutral-400 ml-1">较上周</span>
+              <span data-metric="total-incidents-change">3.2%</span>
+              <span class="text-neutral-400 ml-1">较上月</span>
             </div>
           </div>
           <div class="bg-danger/10 p-3 rounded-lg">
@@ -187,16 +254,16 @@
         </div>
       </div>
       
-      <!-- 启用人次 -->
+      <!-- 总启用人次 -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-neutral-500 text-sm mb-1">启用人次</p>
-            <h3 class="text-3xl font-bold text-neutral-700">568</h3>
+            <p class="text-neutral-500 text-sm mb-1">总启用人次</p>
+            <h3 class="text-3xl font-bold text-neutral-700" data-metric="total-enabled-users">689</h3>
             <div class="flex items-center mt-2 text-success text-sm">
               <i class="fa fa-arrow-up mr-1"></i>
-              <span>28.7%</span>
-              <span class="text-neutral-400 ml-1">较上周</span>
+              <span data-metric="total-enabled-users-change">41.5%</span>
+              <span class="text-neutral-400 ml-1">较上月</span>
             </div>
           </div>
           <div class="bg-success/10 p-3 rounded-lg">
@@ -205,39 +272,39 @@
         </div>
       </div>
       
-      <!-- 停用人次 -->
+      <!-- 功能覆盖率 -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover hover-lift">
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-neutral-500 text-sm mb-1">停用人次</p>
-            <h3 class="text-3xl font-bold text-neutral-700">42</h3>
-            <div class="flex items-center mt-2 text-neutral-400 text-sm">
-              <i class="fa fa-minus mr-1"></i>
-              <span>0.0%</span>
-              <span class="text-neutral-400 ml-1">较上周</span>
+            <p class="text-neutral-500 text-sm mb-1">功能覆盖率</p>
+            <h3 class="text-3xl font-bold text-neutral-700" data-metric="coverage-rate">78.3%</h3>
+            <div class="flex items-center mt-2 text-success text-sm">
+              <i class="fa fa-arrow-up mr-1"></i>
+              <span data-metric="coverage-rate-change">5.8%</span>
+              <span class="text-neutral-400 ml-1">较上月</span>
             </div>
           </div>
-          <div class="bg-warning/10 p-3 rounded-lg">
-            <i class="fa fa-power-off text-warning text-xl"></i>
+          <div class="bg-secondary/10 p-3 rounded-lg">
+            <i class="fa fa-pie-chart text-secondary text-xl"></i>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 功能状态和适用范围 -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.1s">
-      <!-- 功能状态 -->
+    <!-- 功能状态和适用范围（三级功能） -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.1s" id="status-cards">
+      <!-- 功能当前状态 -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
         <h3 class="text-lg font-semibold mb-4 flex items-center">
           <i class="fa fa-info-circle text-primary mr-2"></i>
           功能当前状态
         </h3>
         <div class="flex flex-col items-center justify-center py-4">
-          <span class="status-tag bg-secondary/10 text-secondary border border-secondary/30">
-            灰度中
+          <span class="status-tag bg-success/10 text-success border border-success/30" id="feature-status">
+            全量发布
           </span>
-          <p class="text-neutral-500 mt-3 text-center">
-            已向 30% 企业用户开放，计划于 2025-12-01 全量发布
+          <p class="text-neutral-500 mt-3 text-center" id="status-desc">
+            智能批量退货全功能已向所有付费用户开放，包含4个子功能模块
           </p>
         </div>
       </div>
@@ -255,7 +322,7 @@
           <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
             Premium
           </span>
-          <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
+          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
             Pro
           </span>
           <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
@@ -264,41 +331,64 @@
         </div>
       </div>
       
-      <!-- 适用平台 -->
+      <!-- 适用电商平台（新增，替换子功能模块分布） -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
         <h3 class="text-lg font-semibold mb-4 flex items-center">
           <i class="fa fa-globe text-primary mr-2"></i>
           适用电商平台
         </h3>
+        <!-- 状态说明（新增） -->
+        <div class="flex items-center text-xs text-neutral-500 mb-3 gap-4">
+          <span class="flex items-center"><i class="fa fa-check-circle text-success mr-1"></i>完全支持</span>
+          <span class="flex items-center"><i class="fa fa-minus-circle text-warning mr-1"></i>部分支持</span>
+          <span class="flex items-center"><i class="fa fa-times-circle text-neutral-400 mr-1"></i>不支持</span>
+        </div>
         <div class="grid grid-cols-2 gap-3">
-          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+          <!-- 完全支持（绿色） -->
+          <span class="platform-tag badge-active">
+            <i class="fa fa-check-circle text-success text-xs"></i>
             Amazon
           </span>
-          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+          <span class="platform-tag badge-active">
+            <i class="fa fa-check-circle text-success text-xs"></i>
             Shopify
           </span>
-          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
+          <span class="platform-tag badge-active">
+            <i class="fa fa-check-circle text-success text-xs"></i>
             eBay
           </span>
-          <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
+          <!-- 部分支持（黄色） -->
+          <span class="platform-tag badge-partial">
+            <i class="fa fa-minus-circle text-warning text-xs"></i>
             Walmart
           </span>
-          <span class="badge-inactive px-3 py-2 rounded-lg text-sm font-medium text-center">
+          <span class="platform-tag badge-partial">
+            <i class="fa fa-minus-circle text-warning text-xs"></i>
+            Etsy
+          </span>
+          <!-- 不支持（灰色） -->
+          <span class="platform-tag badge-inactive">
+            <i class="fa fa-times-circle text-neutral-400 text-xs"></i>
             AliExpress
           </span>
-          <span class="badge-active px-3 py-2 rounded-lg text-sm font-medium text-center">
-            Etsy
+          <span class="platform-tag badge-inactive">
+            <i class="fa fa-times-circle text-neutral-400 text-xs"></i>
+            JD Global
+          </span>
+          <span class="platform-tag badge-inactive">
+            <i class="fa fa-times-circle text-neutral-400 text-xs"></i>
+            Shein
           </span>
         </div>
       </div>
     </div>
 
-    <!-- 功能使用趋势图（带筛选功能） -->
+    <!-- 功能使用趋势图（三级功能：汇总趋势） -->
     <div class="bg-white rounded-xl shadow-card p-6 mb-8 animate-slide-up" style="animation-delay: 0.2s">
       <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
         <h3 class="text-lg font-semibold flex items-center">
           <i class="fa fa-line-chart text-primary mr-2"></i>
-          功能使用趋势
+          整体使用趋势（近30天）
         </h3>
         
         <!-- 计费方案筛选控件 -->
@@ -318,17 +408,10 @@
             </label>
           </div>
           <div class="flex items-center">
-            <input type="checkbox" id="filter-pro" class="filter-checkbox">
+            <input type="checkbox" id="filter-pro" class="filter-checkbox" checked>
             <label for="filter-pro" class="filter-label flex items-center">
               <span class="w-3 h-3 rounded-full bg-plan-pro mr-1.5"></span>
               Pro
-            </label>
-          </div>
-          <div class="flex items-center">
-            <input type="checkbox" id="filter-essential" class="filter-checkbox">
-            <label for="filter-essential" class="filter-label flex items-center">
-              <span class="w-3 h-3 rounded-full bg-plan-essential mr-1.5"></span>
-              Essential
             </label>
           </div>
         </div>
@@ -339,8 +422,8 @@
       </div>
     </div>
 
-    <!-- 版本更新和路线图 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.3s">
+    <!-- 版本更新和路线图（三级功能） -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.3s" id="changelog-roadmap">
       <!-- 最近更新日志 -->
       <div class="bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover">
         <div class="flex justify-between items-center mb-4">
@@ -353,24 +436,24 @@
         <div class="space-y-4">
           <div class="border-l-2 border-primary pl-4 py-1">
             <div class="flex justify-between items-start">
-              <h4 class="font-medium">支持批量退货标签打印</h4>
+              <h4 class="font-medium">智能批量退货功能套件升级</h4>
               <span class="text-neutral-400 text-sm">2025-10-28</span>
             </div>
-            <p class="text-neutral-500 text-sm mt-1">新增批量生成退货标签功能，支持PDF导出和直接打印，提升操作效率</p>
+            <p class="text-neutral-500 text-sm mt-1">优化4个子功能模块的协同效率，新增数据联动功能，提升整体操作流畅度</p>
           </div>
           <div class="border-l-2 border-neutral-200 pl-4 py-1">
             <div class="flex justify-between items-start">
-              <h4 class="font-medium">亚马逊退货规则适配</h4>
+              <h4 class="font-medium">新增多平台退货同步模块</h4>
               <span class="text-neutral-400 text-sm">2025-10-15</span>
             </div>
-            <p class="text-neutral-500 text-sm mt-1">优化亚马逊平台退货流程，自动匹配平台最新退货政策和处理要求</p>
+            <p class="text-neutral-500 text-sm mt-1">支持Amazon、Shopify等6大平台的退货数据同步，实现跨平台统一管理</p>
           </div>
           <div class="border-l-2 border-neutral-200 pl-4 py-1">
             <div class="flex justify-between items-start">
-              <h4 class="font-medium">多语言退货原因选择</h4>
-              <span class="text-neutral-400 text-sm">2025-10-01</span>
+              <h4 class="font-medium">智能批量退货功能上线</h4>
+              <span class="text-neutral-400 text-sm">2025-09-30</span>
             </div>
-            <p class="text-neutral-500 text-sm mt-1">支持英语、德语、法语等6种语言的退货原因选项，满足跨境业务需求</p>
+            <p class="text-neutral-500 text-sm mt-1">初始发布3个子功能模块，支持标签打印、自动流程处理、数据分析功能</p>
           </div>
         </div>
       </div>
@@ -387,24 +470,24 @@
         <div class="space-y-4">
           <div class="border-l-2 border-warning pl-4 py-1">
             <div class="flex justify-between items-start">
-              <h4 class="font-medium">支持Walmart平台退货</h4>
-              <span class="text-warning text-sm font-medium">2025-11-30</span>
+              <h4 class="font-medium">子功能权限精细化管理</h4>
+              <span class="text-warning text-sm font-medium">2025-11-20</span>
             </div>
-            <p class="text-neutral-500 text-sm mt-1">新增Walmart平台退货流程集成，支持自动同步退货状态和退款处理</p>
+            <p class="text-neutral-500 text-sm mt-1">支持按子功能模块分配权限，实现更灵活的团队协作管理</p>
           </div>
           <div class="border-l-2 border-neutral-200 pl-4 py-1">
             <div class="flex justify-between items-start">
-              <h4 class="font-medium">AI智能退货原因分类</h4>
+              <h4 class="font-medium">AI智能退货原因识别</h4>
               <span class="text-neutral-400 text-sm font-medium">2025-12-15</span>
             </div>
-            <p class="text-neutral-500 text-sm mt-1">基于AI算法自动识别和分类退货原因，生成退货数据分析报告</p>
+            <p class="text-neutral-500 text-sm mt-1">集成AI算法自动识别退货原因，提供智能分类和统计分析</p>
           </div>
           <div class="border-l-2 border-neutral-200 pl-4 py-1">
             <div class="flex justify-between items-start">
-              <h4 class="font-medium">批量退货API接口开放</h4>
-              <span class="text-neutral-400 text-sm font-medium">2026-01-20</span>
+              <h4 class="font-medium">移动端适配优化</h4>
+              <span class="text-neutral-400 text-sm font-medium">2026-01-30</span>
             </div>
-            <p class="text-neutral-500 text-sm mt-1">提供RESTful API接口，支持第三方系统集成和自动化批量退货操作</p>
+            <p class="text-neutral-500 text-sm mt-1">优化所有子功能模块的移动端体验，支持随时随地处理退货业务</p>
           </div>
         </div>
       </div>
@@ -425,81 +508,171 @@
 
   <!-- 图表初始化脚本 -->
   <script>
+    // 数据集合：三级功能（汇总）+ 四级子功能（第一个可切换）
+    const functionData = {
+      // 三级功能：智能批量退货（首页默认展示）
+      'level3': {
+        title: '智能批量退货 - 数据看板',
+        desc: '三级功能整体使用数据与状态监控',
+        currentView: '当前查看: 智能批量退货（三级功能）',
+        metrics: {
+          'total-tickets': '1,456',
+          'total-tickets-change': '23.7%',
+          'total-tickets-trend': 'success',
+          'total-incidents': '28',
+          'total-incidents-change': '3.2%',
+          'total-incidents-trend': 'danger',
+          'total-enabled-users': '689',
+          'total-enabled-users-change': '41.5%',
+          'total-enabled-users-trend': 'success',
+          'coverage-rate': '78.3%',
+          'coverage-rate-change': '5.8%',
+          'coverage-rate-trend': 'success'
+        },
+        status: '全量发布',
+        statusDesc: '智能批量退货全功能已向所有付费用户开放，包含4个子功能模块',
+        chartData: [
+          {
+            label: 'Enterprise',
+            data: [86, 92, 89, 105, 112, 108, 125, 132, 128, 145],
+            borderColor: '#165DFF',
+            backgroundColor: 'rgba(22, 93, 255, 0.1)',
+          },
+          {
+            label: 'Premium',
+            data: [42, 45, 43, 51, 56, 53, 62, 65, 63, 72],
+            borderColor: '#36CFC9',
+            backgroundColor: 'rgba(54, 207, 201, 0.1)',
+          },
+          {
+            label: 'Pro',
+            data: [28, 30, 29, 35, 38, 36, 42, 45, 43, 50],
+            borderColor: '#FAAD14',
+            backgroundColor: 'rgba(250, 173, 20, 0.1)',
+          }
+        ],
+        chartLabelType: 'month' // 月份标签（三级功能用月度数据）
+      },
+      // 四级子功能：批量退货标签打印（第一个可切换）
+      'batch-label': {
+        title: '批量退货标签打印 - 数据看板',
+        desc: '四级子功能使用数据与状态监控',
+        currentView: '当前查看: 批量退货标签打印（四级子功能）',
+        breadcrumbLevel4: '批量退货标签打印',
+        metrics: {
+          'total-tickets': '867',
+          'total-tickets-change': '18.3%',
+          'total-tickets-trend': 'success',
+          'total-incidents': '9',
+          'total-incidents-change': '1.2%',
+          'total-incidents-trend': 'danger',
+          'total-enabled-users': '423',
+          'total-enabled-users-change': '32.5%',
+          'total-enabled-users-trend': 'success',
+          'coverage-rate': '68.2%',
+          'coverage-rate-change': '4.3%',
+          'coverage-rate-trend': 'success'
+        },
+        status: '全量发布',
+        statusDesc: '已向所有支持的计费方案用户开放，发布于 2025-10-28',
+        chartData: [
+          {
+            label: 'Enterprise',
+            data: [68, 75, 72, 89, 98, 95, 112],
+            borderColor: '#165DFF',
+            backgroundColor: 'rgba(22, 93, 255, 0.1)',
+          },
+          {
+            label: 'Premium',
+            data: [35, 42, 38, 46, 44, 43, 45],
+            borderColor: '#36CFC9',
+            backgroundColor: 'rgba(54, 207, 201, 0.1)',
+          },
+          {
+            label: 'Pro',
+            data: [18, 22, 20, 25, 28, 26, 29],
+            borderColor: '#FAAD14',
+            backgroundColor: 'rgba(250, 173, 20, 0.1)',
+          }
+        ],
+        chartLabelType: 'day' // 日期标签（四级子功能用7天数据）
+      }
+    };
+
+    // 全局变量
+    let usageChart;
+    let currentFunctionLevel = 'level3'; // 默认三级功能
+    let currentSubfeature = '';
+
     // 等待DOM加载完成
     document.addEventListener('DOMContentLoaded', function() {
-      // 初始化使用趋势图表
-      const ctx = document.getElementById('usageTrendChart').getContext('2d');
+      // 初始化图表
+      initChart();
       
-      // 生成过去7天的日期标签
-      const labels = [];
-      const today = new Date();
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        labels.push(date.getMonth() + 1 + '/' + date.getDate());
-      }
+      // 绑定四级子功能点击事件
+      bindSubfeatureEvents();
       
-      // 按计费方案分类的图表数据
-      const planDatasets = [
-        {
-          label: 'Enterprise',
-          data: [86, 95, 88, 112, 128, 122, 145],
-          borderColor: '#165DFF',
-          backgroundColor: 'rgba(22, 93, 255, 0.1)',
-          tension: 0.4,
-          fill: true,
-          borderWidth: 2,
-          pointBackgroundColor: '#165DFF',
-          pointRadius: 3,
-          pointHoverRadius: 5
-        },
-        {
-          label: 'Premium',
-          data: [42, 50, 44, 56, 54, 53, 53],
-          borderColor: '#36CFC9',
-          backgroundColor: 'rgba(54, 207, 201, 0.1)',
-          tension: 0.4,
-          fill: true,
-          borderWidth: 2,
-          pointBackgroundColor: '#36CFC9',
-          pointRadius: 3,
-          pointHoverRadius: 5
-        },
-        {
-          label: 'Pro',
-          data: [0, 0, 0, 0, 0, 0, 0],
-          borderColor: '#FAAD14',
-          backgroundColor: 'rgba(250, 173, 20, 0.1)',
-          tension: 0.4,
-          fill: true,
-          borderWidth: 2,
-          pointBackgroundColor: '#FAAD14',
-          pointRadius: 3,
-          pointHoverRadius: 5
-        },
-        {
-          label: 'Essential',
-          data: [0, 0, 0, 0, 0, 0, 0],
-          borderColor: '#909399',
-          backgroundColor: 'rgba(144, 147, 153, 0.1)',
-          tension: 0.4,
-          fill: true,
-          borderWidth: 2,
-          pointBackgroundColor: '#909399',
-          pointRadius: 3,
-          pointHoverRadius: 5
-        }
+      // 绑定面包屑点击事件（返回上级）
+      bindBreadcrumbEvents();
+      
+      // 绑定时间范围选择器事件
+      const timeRangeSelect = document.getElementById('time-range');
+      timeRangeSelect.addEventListener('change', function() {
+        const selectedValue = this.value;
+        console.log('时间范围已变更为:', selectedValue);
+        
+        // 加载动画效果
+        showLoadingState();
+        
+        setTimeout(() => {
+          hideLoadingState();
+        }, 500);
+      });
+      
+      // 绑定筛选框事件
+      const filterCheckboxes = [
+        document.getElementById('filter-enterprise'),
+        document.getElementById('filter-premium'),
+        document.getElementById('filter-pro')
       ];
       
+      filterCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', function() {
+          updateChartDatasets();
+        });
+      });
+    });
+
+    // 初始化图表
+    function initChart() {
+      const ctx = document.getElementById('usageTrendChart').getContext('2d');
+      
+      // 获取当前功能数据
+      const currentData = functionData[currentFunctionLevel === 'level3' ? 'level3' : 'batch-label'];
+      
+      // 生成标签（三级用月度，四级用7天）
+      const labels = generateLabels(currentData.chartLabelType);
+      
+      // 处理数据集
+      const datasets = currentData.chartData.map(data => ({
+        label: data.label,
+        data: data.data,
+        borderColor: data.borderColor,
+        backgroundColor: data.backgroundColor,
+        tension: 0.4,
+        fill: true,
+        borderWidth: 2,
+        pointBackgroundColor: data.borderColor,
+        pointRadius: 3,
+        pointHoverRadius: 5
+      }));
+      
       // 创建图表实例
-      const usageChart = new Chart(ctx, {
+      usageChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
-          datasets: planDatasets.filter((_, index) => {
-            // 默认选中Enterprise和Premium
-            return index === 0 || index === 1;
-          })
+          datasets: datasets
         },
         options: {
           responsive: true,
@@ -554,7 +727,7 @@
                   size: 11
                 },
                 color: '#909399',
-                stepSize: 50
+                stepSize: currentData.chartLabelType === 'month' ? 50 : 30
               }
             }
           },
@@ -568,55 +741,270 @@
           }
         }
       });
+    }
+
+    // 生成标签（月度/7天）
+    function generateLabels(type) {
+      const labels = [];
+      const today = new Date();
       
-      // 筛选功能实现
-      const filterCheckboxes = [
-        document.getElementById('filter-enterprise'),
-        document.getElementById('filter-premium'),
-        document.getElementById('filter-pro'),
-        document.getElementById('filter-essential')
-      ];
-      
-      filterCheckboxes.forEach((checkbox, index) => {
-        checkbox.addEventListener('change', function() {
-          updateChartDatasets();
-        });
-      });
-      
-      // 更新图表数据集
-      function updateChartDatasets() {
-        const activeDatasets = [];
-        
-        filterCheckboxes.forEach((checkbox, index) => {
-          if (checkbox.checked) {
-            activeDatasets.push(planDatasets[index]);
-          }
-        });
-        
-        usageChart.data.datasets = activeDatasets;
-        usageChart.update();
+      if (type === 'month') {
+        // 生成近10个月标签（倒序）
+        for (let i = 9; i >= 0; i--) {
+          const date = new Date(today);
+          date.setMonth(today.getMonth() - i);
+          labels.push(date.getFullYear() + '年' + (date.getMonth() + 1) + '月');
+        }
+      } else if (type === 'day') {
+        // 生成近7天标签（倒序）
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - i);
+          labels.push((date.getMonth() + 1) + '/' + date.getDate());
+        }
       }
       
-      // 时间范围选择器交互
-      const timeRangeSelect = document.getElementById('time-range');
-      timeRangeSelect.addEventListener('change', function() {
-        // 这里可以添加时间范围变更后的逻辑
-        const selectedValue = this.value;
-        console.log('时间范围已变更为:', selectedValue);
+      return labels;
+    }
+
+    // 绑定四级子功能点击事件
+    function bindSubfeatureEvents() {
+      const subnavItems = document.querySelectorAll('.subnav-item');
+      
+      subnavItems.forEach(item => {
+        item.addEventListener('click', function() {
+          const subfeatureId = this.getAttribute('data-subfeature');
+          
+          // 只有第一个四级子功能可切换
+          if (subfeatureId === 'batch-label') {
+            // 更新当前状态
+            currentFunctionLevel = 'level4';
+            currentSubfeature = subfeatureId;
+            
+            // 显示加载状态
+            showLoadingState();
+            
+            // 模拟数据加载延迟
+            setTimeout(() => {
+              // 更新页面数据
+              updatePageData(subfeatureId);
+              // 更新面包屑（显示四级）
+              updateBreadcrumb('level4', subfeatureId);
+              // 隐藏加载状态
+              hideLoadingState();
+            }, 600);
+          } else {
+            // 其他四级子功能提示
+            alert('该四级子功能的数据看板正在开发中，敬请期待！');
+          }
+        });
+      });
+    }
+
+    // 绑定面包屑点击事件（返回上级）
+    function bindBreadcrumbEvents() {
+      const breadcrumbItems = document.querySelectorAll('.breadcrumb-item');
+      
+      breadcrumbItems.forEach(item => {
+        item.addEventListener('click', function() {
+          const level = this.getAttribute('data-level');
+          
+          // 点击三级面包屑且当前在四级功能时，返回三级
+          if (level === '3' && currentFunctionLevel === 'level4') {
+            // 更新当前状态
+            currentFunctionLevel = 'level3';
+            currentSubfeature = '';
+            
+            // 显示加载状态
+            showLoadingState();
+            
+            // 模拟数据加载延迟
+            setTimeout(() => {
+              // 更新页面数据（返回三级汇总）
+              updatePageData('level3');
+              // 更新面包屑（隐藏四级）
+              updateBreadcrumb('level3');
+              // 隐藏加载状态
+              hideLoadingState();
+            }, 600);
+          }
+        });
+      });
+    }
+
+    // 更新页面数据
+    function updatePageData(target) {
+      // 获取目标数据
+      const data = target === 'level3' ? functionData.level3 : functionData[target];
+      
+      // 更新页面标题和描述
+      document.getElementById('page-title').textContent = data.title;
+      document.getElementById('page-desc').textContent = data.desc;
+      document.getElementById('current-view').textContent = data.currentView;
+      
+      // 更新核心指标数据
+      if (data.metrics) {
+        for (const [key, value] of Object.entries(data.metrics)) {
+          const metricEl = document.querySelector(`[data-metric="${key}"]`);
+          if (metricEl) metricEl.textContent = value;
+        }
         
-        // 简单的加载动画效果
-        const cards = document.querySelectorAll('.card-transition');
+        // 更新趋势箭头颜色
+        updateTrendColors(data.metrics);
+      }
+      
+      // 更新功能状态
+      if (data.status) {
+        const statusTag = document.getElementById('feature-status');
+        statusTag.textContent = data.status;
+        
+        // 根据状态更新样式
+        if (data.status === '全量发布') {
+          statusTag.className = 'status-tag bg-success/10 text-success border border-success/30';
+        } else if (data.status === '灰度中') {
+          statusTag.className = 'status-tag bg-secondary/10 text-secondary border border-secondary/30';
+        } else if (data.status === '待发布') {
+          statusTag.className = 'status-tag bg-warning/10 text-warning border border-warning/30';
+        } else if (data.status === '已下线') {
+          statusTag.className = 'status-tag bg-danger/10 text-danger border border-danger/30';
+        }
+        
+        document.getElementById('status-desc').textContent = data.statusDesc;
+      }
+      
+      // 更新图表数据
+      updateChartData(data);
+    }
+
+    // 更新趋势箭头颜色
+    function updateTrendColors(metrics) {
+      // 工单数量趋势
+      const ticketsTrendEl = document.querySelector('[data-metric="total-tickets-change"]').parentElement;
+      ticketsTrendEl.className = `flex items-center mt-2 text-${metrics['total-tickets-trend']} text-sm`;
+      ticketsTrendEl.innerHTML = `<i class="fa fa-arrow-${metrics['total-tickets-trend'] === 'success' ? 'up' : 'down'} mr-1"></i>
+        <span data-metric="total-tickets-change">${metrics['total-tickets-change']}</span>
+        <span class="text-neutral-400 ml-1">${currentFunctionLevel === 'level3' ? '较上月' : '较上周'}</span>`;
+      
+      // Incident数量趋势
+      const incidentsTrendEl = document.querySelector('[data-metric="total-incidents-change"]').parentElement;
+      incidentsTrendEl.className = `flex items-center mt-2 text-${metrics['total-incidents-trend']} text-sm`;
+      incidentsTrendEl.innerHTML = `<i class="fa fa-arrow-${metrics['total-incidents-trend'] === 'success' ? 'down' : 'up'} mr-1"></i>
+        <span data-metric="total-incidents-change">${metrics['total-incidents-change']}</span>
+        <span class="text-neutral-400 ml-1">${currentFunctionLevel === 'level3' ? '较上月' : '较上周'}</span>`;
+      
+      // 启用人次趋势
+      const enabledUsersTrendEl = document.querySelector('[data-metric="total-enabled-users-change"]').parentElement;
+      enabledUsersTrendEl.className = `flex items-center mt-2 text-${metrics['total-enabled-users-trend']} text-sm`;
+      enabledUsersTrendEl.innerHTML = `<i class="fa fa-arrow-${metrics['total-enabled-users-trend'] === 'success' ? 'up' : 'down'} mr-1"></i>
+        <span data-metric="total-enabled-users-change">${metrics['total-enabled-users-change']}</span>
+        <span class="text-neutral-400 ml-1">${currentFunctionLevel === 'level3' ? '较上月' : '较上周'}</span>`;
+      
+      // 覆盖率趋势
+      const coverageRateTrendEl = document.querySelector('[data-metric="coverage-rate-change"]').parentElement;
+      coverageRateTrendEl.className = `flex items-center mt-2 text-${metrics['coverage-rate-trend']} text-sm`;
+      coverageRateTrendEl.innerHTML = `<i class="fa fa-arrow-${metrics['coverage-rate-trend'] === 'success' ? 'up' : 'down'} mr-1"></i>
+        <span data-metric="coverage-rate-change">${metrics['coverage-rate-change']}</span>
+        <span class="text-neutral-400 ml-1">${currentFunctionLevel === 'level3' ? '较上月' : '较上周'}</span>`;
+    }
+
+    // 更新图表数据
+    function updateChartData(data) {
+      // 生成新标签
+      const labels = generateLabels(data.chartLabelType);
+      
+      // 处理数据集
+      const datasets = data.chartData.map(item => ({
+        label: item.label,
+        data: item.data,
+        borderColor: item.borderColor,
+        backgroundColor: item.backgroundColor,
+        tension: 0.4,
+        fill: true,
+        borderWidth: 2,
+        pointBackgroundColor: item.borderColor,
+        pointRadius: 3,
+        pointHoverRadius: 5
+      }));
+      
+      // 更新图表配置
+      usageChart.data.labels = labels;
+      usageChart.data.datasets = datasets;
+      
+      // 更新Y轴步长
+      usageChart.options.scales.y.ticks.stepSize = data.chartLabelType === 'month' ? 50 : 30;
+      
+      // 更新图表
+      usageChart.update();
+    }
+
+    // 更新图表数据集（筛选功能）
+    function updateChartDatasets() {
+      const currentData = currentFunctionLevel === 'level3' ? functionData.level3 : functionData.batch-label;
+      updateChartData(currentData);
+    }
+
+    // 更新面包屑显示
+    function updateBreadcrumb(level, subfeatureId = '') {
+      const level4Separator = document.getElementById('level4-separator');
+      const level4Item = document.getElementById('level4-item');
+      const level3Item = document.querySelector('[data-level="3"]');
+      
+      if (level === 'level4' && subfeatureId) {
+        // 显示四级面包屑
+        level4Separator.classList.remove('hidden');
+        level4Item.classList.remove('hidden');
+        // 设置四级面包屑文本
+        level4Item.textContent = functionData[subfeatureId].breadcrumbLevel4;
+        // 三级面包屑取消active（四级active）
+        level3Item.classList.remove('active');
+        level4Item.classList.add('active');
+      } else {
+        // 隐藏四级面包屑
+        level4Separator.classList.add('hidden');
+        level4Item.classList.add('hidden');
+        // 三级面包屑恢复active
+        level3Item.classList.add('active');
+        level4Item.classList.remove('active');
+      }
+    }
+
+    // 显示加载状态
+    function showLoadingState() {
+      const cards = document.querySelectorAll('.card-transition');
+      const metricsCards = document.getElementById('metrics-cards');
+      const statusCards = document.getElementById('status-cards');
+      const changelogRoadmap = document.getElementById('changelog-roadmap');
+      
+      // 添加加载动画类
+      cards.forEach(card => {
+        card.classList.add('data-loading');
+      });
+      
+      // 轻微透明度变化
+      metricsCards.style.opacity = '0.7';
+      statusCards.style.opacity = '0.7';
+      changelogRoadmap.style.opacity = '0.7';
+    }
+
+    // 隐藏加载状态
+    function hideLoadingState() {
+      const cards = document.querySelectorAll('.card-transition');
+      const metricsCards = document.getElementById('metrics-cards');
+      const statusCards = document.getElementById('status-cards');
+      const changelogRoadmap = document.getElementById('changelog-roadmap');
+      
+      // 移除加载动画类
+      setTimeout(() => {
         cards.forEach(card => {
-          card.style.opacity = '0.7';
+          card.classList.remove('data-loading');
         });
         
-        setTimeout(() => {
-          cards.forEach(card => {
-            card.style.opacity = '1';
-          });
-        }, 500);
-      });
-    });
+        // 恢复透明度
+        metricsCards.style.opacity = '1';
+        statusCards.style.opacity = '1';
+        changelogRoadmap.style.opacity = '1';
+      }, 300);
+    }
   </script>
 </body>
 </html>
